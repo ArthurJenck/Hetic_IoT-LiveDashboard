@@ -37,6 +37,61 @@ const sendText = (socket, text) => {
   socket.write(Buffer.concat([header, payload]))
 }
 
+const parseFrames = (buffer) => {
+  const frames = []
+  let offset = 0
+
+  while (true) {
+    if (buffer.length - offset < 2) break
+
+    const b0 = buffer[offset]
+    const b1 = buffer[offset + 1]
+
+    const fin = (b0 & 0x80) !== 0
+    const opcode = b0 & 0x0f
+    const masked = (b1 & 0x80) !== 0
+    let len = b1 & 0x7f
+
+    if (!fin) throw new Error("Fragmented frames not supported")
+
+    let headerLen = 2
+    if (len === 126) {
+      if (buffer.length - offset < 4) break
+      len = buffer.readUInt16BE(offset + 2)
+      headerLen = 4
+    } else if (len === 127) {
+      if (buffer.length - offset < 10) break
+      const bigLen = buffer.readBigUInt64BE(offset + 2)
+      if (bigLen > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("Too large")
+      len = Number(bigLen)
+      headerLen = 10
+    }
+
+    const maskLen = masked ? 4 : 0
+    const total = headerLen + maskLen + len
+    if (buffer.length - offset < total) break
+
+    let payloadStart = offset + headerLen
+    let mask
+    if (masked) {
+      mask = buffer.subarray(payloadStart, payloadStart + 4)
+      payloadStart += 4
+    }
+
+    let payload = buffer.subarray(payloadStart, payloadStart + len)
+    if (masked) {
+      const unmasked = Buffer.alloc(len)
+      for (let i = 0; i < len; i++) unmasked[i] = payload[i] ^ mask[i & 3]
+      payload = unmasked
+    }
+
+    frames.push({ opcode, payload })
+    offset += total
+  }
+
+  return { frames, remaining: buffer.subarray(offset) }
+}
+
 const handleRequest = (req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" })
   res.end("HTTP OK\n")
@@ -72,6 +127,30 @@ const handleUpgrade = (req, socket) => {
   )
 
   sendText(socket, "Hello from the other side")
+
+  let buffer = Buffer.alloc(0)
+
+  socket.on("data", (chunk) => {
+    buffer = Buffer.concat([buffer, chunk])
+
+    let parsed
+    try {
+      parsed = parseFrames(buffer)
+    } catch (error) {
+      socket.destroy()
+      return
+    }
+
+    buffer = parsed.remaining
+
+    for (const frame of parsed.frames) {
+      if (frame.opcode === 0x1) {
+        const msg = frame.payload.toString("utf8")
+        console.log("Message received")
+        sendText(socket, `echo: ${msg}`)
+      }
+    }
+  })
 }
 
 server.on("upgrade", handleUpgrade)
