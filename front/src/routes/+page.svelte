@@ -21,7 +21,9 @@
     }
 
     ws.onmessage =(e) => {
-      currentTemp = e.data
+      const telemetry = {...JSON.parse(e.data).telemetry}
+      currentTemp = telemetry.tempC
+      console.log(telemetry)
     }
   }
 </script>

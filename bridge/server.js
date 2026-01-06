@@ -1,19 +1,29 @@
 const WebSocket = require("ws")
+const mqtt = require("mqtt")
+const client = mqtt.connect("mqtt://host.docker.internal:1883")
 
+const webSocketClients = []
 const PORT = 8080
-
 const wss = new WebSocket.Server({ port: PORT })
+const TOPIC = "classroom/+/telemetry"
 
-wss.on("connection", (ws) => {
-  ws.send("Hello from the other side")
-
-  // ws.on("message", (msg) => {
-  //   ws.send("echo: " + msg)
-  // })
-
-  setInterval(() => {
-    ws.send(Math.floor(Math.random() * 10))
-  }, 1000)
+client.on("connect", () => {
+  client.subscribe(TOPIC, (err) => {
+    if (!err) {
+      console.log("Subscribed to topic " + TOPIC)
+    }
+  })
 })
 
-console.log("WebSocket Server on ws://localhost:8080")
+wss.on("connection", (ws) => {
+  webSocketClients.push(ws)
+})
+
+client.on("message", (topic, message) => {
+  const telemetry = JSON.parse(message.toString())
+  console.log(telemetry)
+
+  for (const ws of webSocketClients) {
+    ws.send(JSON.stringify(telemetry))
+  }
+})
