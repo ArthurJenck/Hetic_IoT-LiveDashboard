@@ -1,12 +1,33 @@
 <script>
-  let count = 0;
+  const uri = "ws://localhost:8080"
+  let status = "idle"
 
-  const increment = () => {
-    count++;
-  };
+  const connect = () => {
+    status = "connecting"
+
+    const ws = new WebSocket(uri)
+    ws.onopen = () => {
+      status = "open"
+      ws.send("hello")
+    }
+
+    ws.onerror = () => {
+      status = "error"
+    }
+
+    ws.onclose = () => {
+      status = "closed"
+    }
+
+    ws.onmessage =(e) => {
+      console.log(e.data)
+    }
+  }
 </script>
 
-<div class="size-screen flex h-screen flex-col items-center justify-center gap-2">
-  <p class="text-xl font-semibold">Compteur {count} !</p>
-  <button onclick={increment} class="rounded-lg border px-2 py-1 text-white bg-neutral-800 cursor-pointer hover:bg-neutral-700">Cliquer ici</button>
+<!-- <div class={css{display: flex}}></div> -->
+
+<div class="flex flex-col justify-center items-center gap-2 p-4">
+  <h1 class="font-semilbold text-lg">Websocket connection status: {status}</h1>
+  <button class="rounded-md px-2 py-1 text-white bg-neutral-800 hover:bg-neutral-700 cursor-pointer" onclick={connect}>Connect</button>
 </div>
