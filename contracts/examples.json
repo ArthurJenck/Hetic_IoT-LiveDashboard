@@ -1,0 +1,36 @@
+{
+  "telemetry": {
+    "deviceId": "esp32-01",
+    "ts": 1736080000,
+    "seq": 42,
+    "tempC": 22.4,
+    "humPct": 48.1,
+    "batteryPct": 87
+  },
+
+  "event": {
+    "event_boot": {
+      "type": "boot",
+      "deviceId": "esp32-01",
+      "ts": 1736080000
+    },
+    "event_ack": {
+      "type": "ack",
+      "deviceId": "esp32-01",
+      "ts": 1736080000,
+      "cmd": "TEMP_UNIT",
+      "ok": true
+    }
+  },
+
+  "cmd": {
+    "cmd": "TEMP_UNIT",
+    "value": 1
+  },
+
+  "status": {
+    "deviceId": "esp32-01",
+    "ts": 1736080000,
+    "status": 200
+  }
+}

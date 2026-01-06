@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  mqtt-explorer:
+    image: ghcr.io/thomasnordquist/mqtt-explorer:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - MQTT_EXPLORER_USERNAME=admin
+      - MQTT_EXPLORER_PASSWORD=password
+      - PORT=3000
+    volumes:
+      - mqtt-explorer-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  mqtt-explorer-data:
