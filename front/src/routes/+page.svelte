@@ -1,6 +1,7 @@
 <script>
   const uri = "ws://localhost:8080"
   let status = "idle"
+  let currentTemp = "1"
 
   const connect = () => {
     status = "connecting"
@@ -20,7 +21,7 @@
     }
 
     ws.onmessage =(e) => {
-      console.log(e.data)
+      currentTemp = e.data
     }
   }
 </script>
@@ -30,4 +31,5 @@
   {#if ["idle", "closed"].includes(status)}
   <button class="rounded-md px-2 py-1 text-white bg-neutral-800 hover:bg-neutral-700 cursor-pointer" onclick={connect}>Connect</button>
   {/if}
+  <h2>La température est de {currentTemp}°C</h2>
 </div>
