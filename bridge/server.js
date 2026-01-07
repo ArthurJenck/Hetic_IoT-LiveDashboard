@@ -1,6 +1,6 @@
 const WebSocket = require("ws")
 const mqtt = require("mqtt")
-const client = mqtt.connect("mqtt://localhost:1883")
+const client = mqtt.connect("mqtt://captain.dev0.pandor.cloud:1884")
 
 const webSocketClients = []
 const PORT = 8080
