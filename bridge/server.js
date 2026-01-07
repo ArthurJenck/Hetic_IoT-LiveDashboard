@@ -1,6 +1,6 @@
 const WebSocket = require("ws")
 const mqtt = require("mqtt")
-const client = mqtt.connect("mqtt://host.docker.internal:1883")
+const client = mqtt.connect("mqtt://localhost:1883")
 
 const webSocketClients = []
 const PORT = 8080
@@ -27,3 +27,5 @@ client.on("message", (topic, message) => {
     ws.send(JSON.stringify(telemetry))
   }
 })
+
+console.log("Listening on port 8080")
