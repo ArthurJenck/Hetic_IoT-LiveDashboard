@@ -1,1 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
+
+@theme {
+  --color-sky-dawn: #e8f4f8;
+  --color-sky-day: #a8d8ea;
+  --color-sky-dusk: #7ba7bc;
+  --color-ocean: #4a90a4;
+  --color-deep-water: #2c5f6f;
+
+  --color-earth-light: #f5e6d3;
+  --color-earth: #d4a574;
+  --color-earth-dark: #8b6f47;
+
+  --color-leaf-light: #c8e6c9;
+  --color-leaf: #81c784;
+  --color-leaf-dark: #4caf50;
+
+  --color-sun: #ffd54f;
+  --color-sunset: #ff8a65;
+
+  --color-fog: #e0e0e0;
+  --color-storm: #546e7a;
+  --color-night: #263238;
+
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Manrope', sans-serif;
+
+  --radius-soft: 1.5rem;
+  --radius-gentle: 1rem;
+
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lifted: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+  --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  font-family: var(--font-body);
+}
+
+body {
+  background: linear-gradient(135deg, #e8f4f8 0%, #f5e6d3 50%, #c8e6c9 100%);
+  min-height: 100vh;
+  color: var(--color-night);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-pulse-soft {
+  animation: pulse 2s ease-in-out infinite;
+}
