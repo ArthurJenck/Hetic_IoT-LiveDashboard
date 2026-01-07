@@ -12,34 +12,16 @@
     tempValue: number;
   }
 
-  interface StatusData {
-    deviceId: string;
-    ts: number;
-    status: 'online' | 'offline';
-  }
-
-  interface EventData {
-    deviceId: string;
-    ts: number;
-    type: string;
-  }
-
-  interface DeviceState {
-    deviceId: string;
-    location: string;
-    telemetry?: TelemetryData;
-    status: 'online' | 'offline';
-    lastEvent?: EventData;
-  }
-
-  type DeviceMap = Record<string, DeviceState>;
+  type DeviceMap = Record<string, TelemetryData>;
 
   const LOCATION_MAP: Record<string, string> = {
     'esp32-01': 'Paris',
     'esp32-02': 'Tokyo',
     'esp32-03': 'New York',
     'esp32-04': 'Sydney',
-    'esp32-05': 'Londres'
+    'esp32-05': 'Londres',
+    'esp32-06': 'Berlin',
+    'esp32-07': 'Bangkok'
   };
 
   const uri = 'ws://localhost:8080';
@@ -47,6 +29,7 @@
   let devices = $state<DeviceMap>({});
   let selectedLocation = $state<string>('all');
   let selectedStatus = $state<string>('all');
+  let now = $state(Date.now());
 
   const connect = () => {
     wsStatus = 'connecting';
@@ -66,72 +49,70 @@
     };
 
     ws.onmessage = (e) => {
-      const message = JSON.parse(e.data);
-      const { type, deviceId } = message;
-
-      if (!devices[deviceId]) {
-        devices[deviceId] = {
-          deviceId,
-          location: LOCATION_MAP[deviceId] || deviceId,
-          status: 'offline'
-        };
-      }
-
-      if (type === 'telemetry') {
-        devices[deviceId].telemetry = message as TelemetryData;
-      } else if (type === 'status') {
-        devices[deviceId].status = (message as StatusData).status;
-      } else if (type === 'events') {
-        devices[deviceId].lastEvent = message as EventData;
-      }
+      const telemetry = JSON.parse(e.data) as TelemetryData;
+      devices[telemetry.deviceId] = telemetry;
     };
+  };
+
+  const isFresh = (ts: number) => {
+    return now - ts * 1000 < 3000;
+  };
+
+  const getLocation = (deviceId: string) => {
+    return LOCATION_MAP[deviceId] || deviceId;
   };
 
   const filteredDevices = $derived(() => {
     let result = Object.values(devices);
 
     if (selectedLocation !== 'all') {
-      result = result.filter((d) => d.location === selectedLocation);
+      result = result.filter((d) => getLocation(d.deviceId) === selectedLocation);
     }
 
     if (selectedStatus !== 'all') {
-      result = result.filter((d) => d.status === selectedStatus);
+      const filterOnline = selectedStatus === 'online';
+      result = result.filter((d) => isFresh(d.ts) === filterOnline);
     }
 
-    return result.sort((a, b) => a.location.localeCompare(b.location));
+    return result.sort((a, b) => getLocation(a.deviceId).localeCompare(getLocation(b.deviceId)));
   });
 
   const stats = $derived(() => {
-    const onlineDevices = Object.values(devices).filter((d) => d.status === 'online');
-    const devicesWithTelemetry = onlineDevices.filter((d) => d.telemetry);
+    const allDevices = Object.values(devices);
+    const onlineDevices = allDevices.filter((d) => isFresh(d.ts));
 
     const avgTemp =
-      devicesWithTelemetry.length > 0
-        ? devicesWithTelemetry.reduce((sum, d) => sum + (d.telemetry?.tempC || 0), 0) /
-          devicesWithTelemetry.length
+      onlineDevices.length > 0
+        ? onlineDevices.reduce((sum, d) => sum + d.tempC, 0) / onlineDevices.length
         : 0;
 
     const avgHum =
-      devicesWithTelemetry.length > 0
-        ? devicesWithTelemetry.reduce((sum, d) => sum + (d.telemetry?.humPct || 0), 0) /
-          devicesWithTelemetry.length
+      onlineDevices.length > 0
+        ? onlineDevices.reduce((sum, d) => sum + d.humPct, 0) / onlineDevices.length
         : 0;
 
     return {
       avgTemp: avgTemp.toFixed(1),
       avgHum: avgHum.toFixed(1),
       onlineCount: onlineDevices.length,
-      offlineCount: Object.values(devices).length - onlineDevices.length,
-      totalCount: Object.values(devices).length
+      offlineCount: allDevices.length - onlineDevices.length,
+      totalCount: allDevices.length
     };
   });
 
   const locations = $derived(() => {
-    return ['all', ...new Set(Object.values(devices).map((d) => d.location))];
+    return [
+      'all',
+      ...new Set(Object.values(devices).map((d) => getLocation(d.deviceId)))
+    ];
   });
 
   onMount(() => {
     connect();
+    const interval = setInterval(() => {
+      now = Date.now();
+    }, 1000);
+    return () => clearInterval(interval);
   });
 </script>
 
@@ -254,7 +235,7 @@
           <div class="flex flex-wrap gap-2">
             {#each locations() as location}
               <button
-                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all cursor-pointer"
+                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all"
                 style={selectedLocation === location
                   ? 'background: var(--color-ocean); color: white; box-shadow: var(--shadow-soft);'
                   : 'background: rgba(255, 255, 255, 0.6); color: var(--color-storm); backdrop-filter: blur(10px);'}
@@ -271,7 +252,7 @@
           <div class="flex gap-2">
             {#each ['all', 'online', 'offline'] as status}
               <button
-                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all cursor-pointer"
+                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all"
                 style={selectedStatus === status
                   ? 'background: var(--color-ocean); color: white; box-shadow: var(--shadow-soft);'
                   : 'background: rgba(255, 255, 255, 0.6); color: var(--color-storm); backdrop-filter: blur(10px);'}
@@ -287,8 +268,8 @@
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {#each filteredDevices() as device, i}
-        {@const isOnline = device.status === 'online'}
-        {@const telemetry = device.telemetry}
+        {@const isOnline = isFresh(device.ts)}
+        {@const location = getLocation(device.deviceId)}
 
         <div
           class="group animate-fade-in rounded-3xl p-6 transition-all hover:scale-105"
@@ -310,7 +291,7 @@
                 class="text-2xl font-bold"
                 style="font-family: var(--font-display); color: var(--color-deep-water);"
               >
-                {device.location}
+                {location}
               </h3>
               <p class="text-xs" style="color: var(--color-storm);">{device.deviceId}</p>
             </div>
@@ -331,59 +312,52 @@
             </div>
           </div>
 
-          {#if telemetry}
-            <div class="space-y-3">
-              <div class="rounded-2xl p-4" style="background: rgba(255, 255, 255, 0.5);">
+          <div class="space-y-3">
+            <div class="rounded-2xl p-4" style="background: rgba(255, 255, 255, 0.5);">
+              <div
+                class="text-5xl font-bold"
+                style="font-family: var(--font-display); color: var(--color-sunset);"
+              >
+                {device.tempC.toFixed(1)}°C
+              </div>
+              <div class="mt-1 text-sm" style="color: var(--color-storm);">
+                {device.tempValue.toFixed(1)}°{device.tempUnit}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-xl p-3" style="background: rgba(255, 255, 255, 0.4);">
+                <div class="text-xs font-medium" style="color: var(--color-storm);">Humidité</div>
                 <div
-                  class="text-5xl font-bold"
-                  style="font-family: var(--font-display); color: var(--color-sunset);"
+                  class="mt-1 text-xl font-bold"
+                  style="font-family: var(--font-display); color: var(--color-ocean);"
                 >
-                  {telemetry.tempC.toFixed(1)}°C
-                </div>
-                <div class="mt-1 text-sm" style="color: var(--color-storm);">
-                  {telemetry.tempValue.toFixed(1)}°{telemetry.tempUnit}
+                  {device.humPct.toFixed(1)}%
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div class="rounded-xl p-3" style="background: rgba(255, 255, 255, 0.4);">
-                  <div class="text-xs font-medium" style="color: var(--color-storm);">Humidité</div>
-                  <div
-                    class="mt-1 text-xl font-bold"
-                    style="font-family: var(--font-display); color: var(--color-ocean);"
-                  >
-                    {telemetry.humPct.toFixed(1)}%
-                  </div>
-                </div>
-
-                <div class="rounded-xl p-3" style="background: rgba(255, 255, 255, 0.4);">
-                  <div class="text-xs font-medium" style="color: var(--color-storm);">Batterie</div>
-                  <div
-                    class="mt-1 text-xl font-bold"
-                    style="font-family: var(--font-display); color: var(--color-leaf-dark);"
-                  >
-                    {telemetry.batteryPct}%
-                  </div>
-                </div>
-              </div>
-
-              <div class="space-y-1 text-xs" style="color: var(--color-storm);">
-                <div class="flex justify-between">
-                  <span>seq:</span>
-                  <span class="font-mono">{telemetry.seq}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Dernière mise à jour:</span>
-                  <span class="font-mono">{new Date(telemetry.ts * 1000).toLocaleTimeString()}</span
-                  >
+              <div class="rounded-xl p-3" style="background: rgba(255, 255, 255, 0.4);">
+                <div class="text-xs font-medium" style="color: var(--color-storm);">Batterie</div>
+                <div
+                  class="mt-1 text-xl font-bold"
+                  style="font-family: var(--font-display); color: var(--color-leaf-dark);"
+                >
+                  {device.batteryPct}%
                 </div>
               </div>
             </div>
-          {:else}
-            <div class="py-8 text-center text-sm" style="color: var(--color-storm);">
-              Aucune donnée disponible
+
+            <div class="space-y-1 text-xs" style="color: var(--color-storm);">
+              <div class="flex justify-between">
+                <span>seq:</span>
+                <span class="font-mono">{device.seq}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Dernière mise à jour:</span>
+                <span class="font-mono">{new Date(device.ts * 1000).toLocaleTimeString()}</span>
+              </div>
             </div>
-          {/if}
+          </div>
         </div>
       {/each}
     </div>
