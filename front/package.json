@@ -61,6 +61,7 @@
   "description": "Everything you need to build a Svelte library, powered by [`sv`](https://npmjs.com/package/sv).",
   "main": "eslint.config.js",
   "dependencies": {
+    "@sglara/cn": "^1.0.0",
     "@tailwindcss/postcss": "^4.1.18",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
