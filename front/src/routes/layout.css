@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 @theme {
   --color-sky-dawn: #e8f4f8;
@@ -33,6 +33,18 @@
   --shadow-lifted: 0 8px 32px rgba(0, 0, 0, 0.12);
 
   --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --arcade-bg: #0a0a14;
+  --arcade-neon-pink: #ff10f0;
+  --arcade-neon-cyan: #00ffff;
+  --arcade-neon-yellow: #ffff00;
+  --arcade-neon-green: #39ff14;
+  --arcade-neon-orange: #ff6600;
+  --arcade-border: #1a1a2e;
+  --arcade-glow-pink: drop-shadow(0 0 8px #ff10f0);
+  --arcade-glow-cyan: drop-shadow(0 0 8px #00ffff);
+  --arcade-glow-yellow: drop-shadow(0 0 8px #ffff00);
+  --arcade-glow-green: drop-shadow(0 0 8px #39ff14);
 }
 
 body {
