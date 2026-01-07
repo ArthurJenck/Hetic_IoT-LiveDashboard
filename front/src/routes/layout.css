@@ -35,13 +35,10 @@
   --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-* {
-  font-family: var(--font-body);
-}
-
 body {
   background: linear-gradient(135deg, #e8f4f8 0%, #f5e6d3 50%, #c8e6c9 100%);
   min-height: 100vh;
+  font-family: var(--font-body);
   color: var(--color-night);
 }
 

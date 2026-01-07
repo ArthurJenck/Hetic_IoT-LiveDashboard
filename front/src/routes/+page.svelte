@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import CountUp from '../components/CountUp.svelte';
 
   interface TelemetryData {
     deviceId: string;
@@ -62,7 +63,7 @@
     return LOCATION_MAP[deviceId] || deviceId;
   };
 
-  const filteredDevices = $derived(() => {
+  const filteredDevices = $derived.by(() => {
     let result = Object.values(devices);
 
     if (selectedLocation !== 'all') {
@@ -77,7 +78,7 @@
     return result.sort((a, b) => getLocation(a.deviceId).localeCompare(getLocation(b.deviceId)));
   });
 
-  const stats = $derived(() => {
+  const stats = $derived.by(() => {
     const allDevices = Object.values(devices);
     const onlineDevices = allDevices.filter((d) => isFresh(d.ts));
 
@@ -100,11 +101,8 @@
     };
   });
 
-  const locations = $derived(() => {
-    return [
-      'all',
-      ...new Set(Object.values(devices).map((d) => getLocation(d.deviceId)))
-    ];
+  const locations = $derived.by(() => {
+    return ['all', ...new Set(Object.values(devices).map((d) => getLocation(d.deviceId)))];
   });
 
   onMount(() => {
@@ -165,7 +163,7 @@
         </div>
       </div>
 
-      {#if stats().totalCount > 0}
+      {#if stats.totalCount > 0}
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div
             class="rounded-3xl p-6 transition-all hover:scale-105"
@@ -178,7 +176,7 @@
               class="mt-2 text-3xl font-bold"
               style="font-family: var(--font-display); color: var(--color-sunset);"
             >
-              {stats().avgTemp}°C
+              <CountUp value={Number(stats.avgTemp)} options={{ decimalPlaces: 1, suffix: '°C' }} />
             </div>
           </div>
 
@@ -193,7 +191,7 @@
               class="mt-2 text-3xl font-bold"
               style="font-family: var(--font-display); color: var(--color-ocean);"
             >
-              {stats().avgHum}%
+              <CountUp value={Number(stats.avgHum)} options={{ decimalPlaces: 1, suffix: '%' }} />
             </div>
           </div>
 
@@ -208,7 +206,7 @@
               class="mt-2 text-3xl font-bold"
               style="font-family: var(--font-display); color: var(--color-leaf-dark);"
             >
-              {stats().onlineCount}
+              <CountUp value={stats.onlineCount} />
             </div>
           </div>
 
@@ -223,7 +221,7 @@
               class="mt-2 text-3xl font-bold"
               style="font-family: var(--font-display); color: var(--color-sunset);"
             >
-              {stats().offlineCount}
+              <CountUp value={stats.offlineCount} />
             </div>
           </div>
         </div>
@@ -233,7 +231,7 @@
         <div class="flex items-center gap-2">
           <span class="text-sm font-medium" style="color: var(--color-storm);">Lieu :</span>
           <div class="flex flex-wrap gap-2">
-            {#each locations() as location}
+            {#each locations as location}
               <button
                 class="rounded-full px-4 py-1.5 text-sm font-medium transition-all"
                 style={selectedLocation === location
@@ -267,7 +265,7 @@
     </header>
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {#each filteredDevices() as device, i}
+      {#each filteredDevices as device, i}
         {@const isOnline = isFresh(device.ts)}
         {@const location = getLocation(device.deviceId)}
 
@@ -318,10 +316,13 @@
                 class="text-5xl font-bold"
                 style="font-family: var(--font-display); color: var(--color-sunset);"
               >
-                {device.tempC.toFixed(1)}°C
+                <CountUp value={device.tempC} options={{ decimalPlaces: 1, suffix: '°C' }} />
               </div>
               <div class="mt-1 text-sm" style="color: var(--color-storm);">
-                {device.tempValue.toFixed(1)}°{device.tempUnit}
+                <CountUp
+                  value={device.tempValue}
+                  options={{ decimalPlaces: 1, suffix: `°${device.tempUnit}` }}
+                />
               </div>
             </div>
 
@@ -332,7 +333,7 @@
                   class="mt-1 text-xl font-bold"
                   style="font-family: var(--font-display); color: var(--color-ocean);"
                 >
-                  {device.humPct.toFixed(1)}%
+                  <CountUp value={device.humPct} options={{ decimalPlaces: 1, suffix: '%' }} />
                 </div>
               </div>
 
@@ -342,7 +343,7 @@
                   class="mt-1 text-xl font-bold"
                   style="font-family: var(--font-display); color: var(--color-leaf-dark);"
                 >
-                  {device.batteryPct}%
+                  <CountUp value={device.batteryPct} options={{ suffix: '%' }} />
                 </div>
               </div>
             </div>
@@ -362,7 +363,7 @@
       {/each}
     </div>
 
-    {#if filteredDevices().length === 0}
+    {#if filteredDevices.length === 0}
       <div class="py-16 text-center">
         <p class="text-lg" style="color: var(--color-storm);">
           Aucune station ne correspond aux filtres sélectionnés
