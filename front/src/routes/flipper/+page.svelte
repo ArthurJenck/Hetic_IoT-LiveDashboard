@@ -585,9 +585,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  :global(body) {
-    background: var(--arcade-bg) !important;
-  }
-</style>
