@@ -129,6 +129,7 @@
         </div>
 
         <div class="flex items-center gap-3">
+          <a href="/flipper" class="rounded-full px-4 py-2 text-sm font-medium transition-all cursor-pointer hover:text-storm" style="background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);">Flipper</a>
           <div
             class="flex items-center gap-2 rounded-full px-4 py-2"
             style="background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);"
@@ -153,7 +154,7 @@
 
           {#if ['idle', 'closed'].includes(wsStatus)}
             <button
-              class="rounded-full px-6 py-2 font-medium transition-all hover:scale-105"
+              class="rounded-full px-6 py-2 font-medium transition-all hover:scale-105 cursor-pointer"
               style="background: var(--color-ocean); color: white; box-shadow: var(--shadow-soft);"
               onclick={connect}
             >
@@ -233,7 +234,7 @@
           <div class="flex flex-wrap gap-2">
             {#each locations as location}
               <button
-                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all"
+                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all cursor-pointer"
                 style={selectedLocation === location
                   ? 'background: var(--color-ocean); color: white; box-shadow: var(--shadow-soft);'
                   : 'background: rgba(255, 255, 255, 0.6); color: var(--color-storm); backdrop-filter: blur(10px);'}
@@ -250,7 +251,7 @@
           <div class="flex gap-2">
             {#each ['all', 'online', 'offline'] as status}
               <button
-                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all"
+                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all cursor-pointer"
                 style={selectedStatus === status
                   ? 'background: var(--color-ocean); color: white; box-shadow: var(--shadow-soft);'
                   : 'background: rgba(255, 255, 255, 0.6); color: var(--color-storm); backdrop-filter: blur(10px);'}
