@@ -5,19 +5,13 @@ const client = mqtt.connect("mqtt://captain.dev0.pandor.cloud:1884")
 const webSocketClients = []
 const PORT = 8080
 const wss = new WebSocket.Server({ port: PORT })
-const TOPICS = [
-  "classroom/+/telemetry",
-  "classroom/+/status",
-  "classroom/+/events",
-]
+const TOPIC = "classroom/+/telemetry"
 
 client.on("connect", () => {
-  TOPICS.forEach((topic) => {
-    client.subscribe(topic, (err) => {
-      if (!err) {
-        console.log("Subscribed to topic " + topic)
-      }
-    })
+  client.subscribe(TOPIC, (err) => {
+    if (!err) {
+      console.log("Subscribed to topic " + TOPIC)
+    }
   })
 })
 
@@ -26,16 +20,7 @@ wss.on("connection", (ws) => {
 })
 
 client.on("message", (topic, message) => {
-  const data = JSON.parse(message.toString())
-  const topicParts = topic.split("/")
-  const messageType = topicParts[2]
-
-  const payload = {
-    type: messageType,
-    ...data,
-  }
-
-  console.log(payload)
+  const payload = JSON.parse(message.toString())
 
   for (const ws of webSocketClients) {
     ws.send(JSON.stringify(payload))
