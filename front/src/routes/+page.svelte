@@ -13,6 +13,10 @@
     tempValue: number;
   }
 
+  type IncomingMessage =
+    | ({ type: 'telemetry' } & TelemetryData)
+    | { type: string; [k: string]: unknown };
+
   type DeviceMap = Record<string, TelemetryData>;
 
   const LOCATION_MAP: Record<string, string> = {
@@ -32,6 +36,24 @@
   let selectedStatus = $state<string>('all');
   let now = $state(Date.now());
 
+  const isFiniteNumber = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value);
+
+  const isTelemetry = (message: any): message is { type: 'telemetry' } & TelemetryData => {
+    return (
+      message &&
+      message.type === 'telemetry' &&
+      typeof message.deviceId === 'string' &&
+      typeof message.ts === 'number' &&
+      typeof message.seq === 'number' &&
+      isFiniteNumber(message.tempC) &&
+      isFiniteNumber(message.humPct) &&
+      isFiniteNumber(message.batteryPct) &&
+      (message.tempUnit === 'C' || message.tempUnit === 'F') &&
+      isFiniteNumber(message.tempValue)
+    );
+  };
+
   const connect = () => {
     wsStatus = 'connecting';
 
@@ -50,8 +72,16 @@
     };
 
     ws.onmessage = (e) => {
-      const telemetry = JSON.parse(e.data) as TelemetryData;
-      devices[telemetry.deviceId] = telemetry;
+      let message: IncomingMessage;
+      try {
+        message = JSON.parse(e.data) as IncomingMessage;
+      } catch {
+        return;
+      }
+
+      if (!isTelemetry(message)) return
+
+      devices[message.deviceId] = message;
     };
   };
 
@@ -129,7 +159,11 @@
         </div>
 
         <div class="flex items-center gap-3">
-          <a href="/flipper" class="rounded-full px-4 py-2 text-sm font-medium transition-all cursor-pointer hover:text-storm" style="background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);">Flipper</a>
+          <a
+            href="/flipper"
+            class="cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-all hover:text-storm"
+            style="background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);">Flipper</a
+          >
           <div
             class="flex items-center gap-2 rounded-full px-4 py-2"
             style="background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);"
@@ -154,7 +188,7 @@
 
           {#if ['idle', 'closed'].includes(wsStatus)}
             <button
-              class="rounded-full px-6 py-2 font-medium transition-all hover:scale-105 cursor-pointer"
+              class="cursor-pointer rounded-full px-6 py-2 font-medium transition-all hover:scale-105"
               style="background: var(--color-ocean); color: white; box-shadow: var(--shadow-soft);"
               onclick={connect}
             >
@@ -234,7 +268,7 @@
           <div class="flex flex-wrap gap-2">
             {#each locations as location}
               <button
-                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all cursor-pointer"
+                class="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all"
                 style={selectedLocation === location
                   ? 'background: var(--color-ocean); color: white; box-shadow: var(--shadow-soft);'
                   : 'background: rgba(255, 255, 255, 0.6); color: var(--color-storm); backdrop-filter: blur(10px);'}
@@ -251,7 +285,7 @@
           <div class="flex gap-2">
             {#each ['all', 'online', 'offline'] as status}
               <button
-                class="rounded-full px-4 py-1.5 text-sm font-medium transition-all cursor-pointer"
+                class="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all"
                 style={selectedStatus === status
                   ? 'background: var(--color-ocean); color: white; box-shadow: var(--shadow-soft);'
                   : 'background: rgba(255, 255, 255, 0.6); color: var(--color-storm); backdrop-filter: blur(10px);'}
@@ -317,13 +351,7 @@
                 class="text-5xl font-bold"
                 style="font-family: var(--font-display); color: var(--color-sunset);"
               >
-                <CountUp value={device.tempC} options={{ decimalPlaces: 1, suffix: '°C' }} />
-              </div>
-              <div class="mt-1 text-sm" style="color: var(--color-storm);">
-                <CountUp
-                  value={device.tempValue}
-                  options={{ decimalPlaces: 1, suffix: `°${device.tempUnit}` }}
-                />
+                <CountUp value={device.tempValue} options={{ decimalPlaces: 1, suffix: `°${device.tempUnit}` }} />
               </div>
             </div>
 
