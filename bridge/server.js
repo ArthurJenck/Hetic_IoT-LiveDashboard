@@ -43,4 +43,8 @@ client.on("message", (topic, message) => {
   }
 })
 
+wss.on("close", (ws) => {
+  webSocketClients.filter((x) => x !== ws)
+})
+
 console.log("Listening on port 8080")
